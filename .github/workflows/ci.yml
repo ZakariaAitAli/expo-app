@@ -1,41 +1,41 @@
 name: Expo CI
 
 on:
-    pull_request:
     push:
-        branches: [main]
+    pull_request:
 
 jobs:
-    ci:
-        runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-22.04
+
+        strategy:
+            matrix:
+                node-version: [22]
 
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v5
-
-            - name: Setup Node
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: pnpm
-
-            - name: Setup PNPM
+            - uses: actions/checkout@v5
+            - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
                   version: 10
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: "pnpm"
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: Fail if deprecated packages found
+            - name: Check deprecated packages
               run: |
                   echo "Checking deprecated packages..."
                   OUTPUT=$(pnpm install --dry-run 2>&1)
                   if echo "$OUTPUT" | grep -i "deprecated"; then
-                    echo "Deprecated packages detected."
+                    echo "Deprecated packages detected!"
                     exit 1
                   fi
-                  echo "No deprecated packages found."
+                  echo "No deprecated packages."
 
             - name: Lint
               run: |
