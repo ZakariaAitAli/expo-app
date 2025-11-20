@@ -14,10 +14,12 @@ jobs:
 
         steps:
             - uses: actions/checkout@v5
+
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
                   version: 10
+
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v4
               with:
@@ -30,11 +32,15 @@ jobs:
             - name: Check deprecated packages
               run: |
                   echo "Checking deprecated packages..."
-                  OUTPUT=$(pnpm install --dry-run 2>&1)
-                  if echo "$OUTPUT" | grep -i "deprecated"; then
+
+                  pnpm list --json > deps.json
+
+                  if jq -e '.. | objects | select(has("deprecated"))' deps.json >/dev/null; then
                     echo "Deprecated packages detected!"
+                    jq '.. | objects | select(has("deprecated"))' deps.json
                     exit 1
                   fi
+
                   echo "No deprecated packages."
 
             - name: Lint
